@@ -280,25 +280,25 @@ export interface MusicLibraryResponse {
   raw: unknown;
 }
 
-/** A project in the account's library. */
-export interface PedraProject {
-  projectId: string;
+/** A property in the account's library. */
+export interface PedraProperty {
+  propertyId: string;
   name: string;
   createdAt?: string;
-  /** Number of photos in the project. */
+  /** Number of photos in the property. */
   photoCount?: number;
-  /** Deep link that opens this project in the Pedra web app. */
+  /** Deep link that opens this property in the Pedra web app. */
   appUrl?: string;
 }
 
-/** Response from {@link Pedra.listProjects}. */
-export interface ProjectsResponse {
-  projects: PedraProject[];
+/** Response from {@link Pedra.listProperties}. */
+export interface PropertiesResponse {
+  properties: PedraProperty[];
   raw: unknown;
 }
 
-/** A photo in a project. */
-export interface ProjectImage {
+/** A photo in a property. */
+export interface PropertyImage {
   imageId: string;
   /** Public URL — pass straight to {@link Pedra.createVideo} or the edit tools. */
   url: string;
@@ -306,42 +306,42 @@ export interface ProjectImage {
   aspectRatio?: number | null;
 }
 
-export interface ListProjectImagesParams {
-  projectId: string;
+export interface ListPropertyImagesParams {
+  propertyId: string;
 }
 
-/** Response from {@link Pedra.listProjectImages}. */
-export interface ProjectImagesResponse {
-  projectId: string;
+/** Response from {@link Pedra.listPropertyImages}. */
+export interface PropertyImagesResponse {
+  propertyId: string;
   name?: string | null;
-  images: ProjectImage[];
+  images: PropertyImage[];
   raw: unknown;
 }
 
-export interface CreateProjectParams {
-  /** Project name, e.g. the listing address. */
+export interface CreatePropertyParams {
+  /** Property name, e.g. the listing address. */
   name?: string;
 }
 
-/** Response from {@link Pedra.createProject}. */
-export interface ProjectResponse {
+/** Response from {@link Pedra.createProperty}. */
+export interface PropertyResponse {
   message?: string;
-  projectId: string;
+  propertyId: string;
   /** Open this in the Pedra web app to upload local photos. */
   appUrl?: string;
   raw: unknown;
 }
 
-export interface AddImagesToProjectParams {
-  projectId: string;
+export interface AddImagesToPropertyParams {
+  propertyId: string;
   /** Up to 20 image URLs. The server fetches and stores each one. */
   imageUrls: string[];
 }
 
-/** Response from {@link Pedra.addImagesToProject}. */
+/** Response from {@link Pedra.addImagesToProperty}. */
 export interface AddImagesResponse {
   message?: string;
-  projectId: string;
+  propertyId: string;
   added: Array<{ imageId: string; url: string; aspectRatio?: number }>;
   failed: Array<{ url: string; error: string }>;
   appUrl?: string;

@@ -22,12 +22,12 @@ import type {
   GenerateVoiceParams,
   VoiceResponse,
   MusicLibraryResponse,
-  ProjectsResponse,
-  ListProjectImagesParams,
-  ProjectImagesResponse,
-  CreateProjectParams,
-  ProjectResponse,
-  AddImagesToProjectParams,
+  PropertiesResponse,
+  ListPropertyImagesParams,
+  PropertyImagesResponse,
+  CreatePropertyParams,
+  PropertyResponse,
+  AddImagesToPropertyParams,
   AddImagesResponse,
 } from "./types";
 
@@ -206,60 +206,60 @@ export class Pedra {
   }
 
   /**
-   * List the account's projects (id, name, photo count, and a deep link to
+   * List the account's properties (id, name, photo count, and a deep link to
    * open each in Pedra). Use it to find photos already in the account.
-   * (`/list_projects`)
+   * (`/list_properties`)
    */
-  async listProjects(): Promise<ProjectsResponse> {
-    const data = await this.post("/list_projects", {});
+  async listProperties(): Promise<PropertiesResponse> {
+    const data = await this.post("/list_properties", {});
     return {
-      projects: (pick(data, "projects") ?? []) as ProjectsResponse["projects"],
+      properties: (pick(data, "properties") ?? []) as PropertiesResponse["properties"],
       raw: data,
     };
   }
 
   /**
-   * List a project's photos as public URLs — ready to pass to
-   * {@link Pedra.createVideo} or the image-editing methods. (`/list_project_images`)
+   * List a property's photos as public URLs — ready to pass to
+   * {@link Pedra.createVideo} or the image-editing methods. (`/list_property_images`)
    */
-  async listProjectImages(
-    params: ListProjectImagesParams,
-  ): Promise<ProjectImagesResponse> {
-    const data = await this.post("/list_project_images", params);
+  async listPropertyImages(
+    params: ListPropertyImagesParams,
+  ): Promise<PropertyImagesResponse> {
+    const data = await this.post("/list_property_images", params);
     return {
-      projectId: pick(data, "projectId") ?? params.projectId,
+      propertyId: pick(data, "propertyId") ?? params.propertyId,
       name: pick(data, "name") ?? null,
-      images: (pick(data, "images") ?? []) as ProjectImagesResponse["images"],
+      images: (pick(data, "images") ?? []) as PropertyImagesResponse["images"],
       raw: data,
     };
   }
 
   /**
-   * Create a project. Returns its id and an `appUrl` to open it in Pedra (the
+   * Create a property. Returns its id and an `appUrl` to open it in Pedra (the
    * way to add brand-new local photos, which can't be sent through the API).
-   * (`/create_project`)
+   * (`/create_property`)
    */
-  async createProject(params: CreateProjectParams = {}): Promise<ProjectResponse> {
-    const data = await this.post("/create_project", params);
+  async createProperty(params: CreatePropertyParams = {}): Promise<PropertyResponse> {
+    const data = await this.post("/create_property", params);
     return {
       message: pick(data, "message"),
-      projectId: pick(data, "projectId") ?? "",
+      propertyId: pick(data, "propertyId") ?? "",
       appUrl: pick(data, "appUrl"),
       raw: data,
     };
   }
 
   /**
-   * Add photos to a project by URL — the server fetches and stores each one,
-   * so any public https image URL works. (`/add_images_to_project`)
+   * Add photos to a property by URL — the server fetches and stores each one,
+   * so any public https image URL works. (`/add_images_to_property`)
    */
-  async addImagesToProject(
-    params: AddImagesToProjectParams,
+  async addImagesToProperty(
+    params: AddImagesToPropertyParams,
   ): Promise<AddImagesResponse> {
-    const data = await this.post("/add_images_to_project", params);
+    const data = await this.post("/add_images_to_property", params);
     return {
       message: pick(data, "message"),
-      projectId: pick(data, "projectId") ?? params.projectId,
+      propertyId: pick(data, "propertyId") ?? params.propertyId,
       added: (pick(data, "added") ?? []) as AddImagesResponse["added"],
       failed: (pick(data, "failed") ?? []) as AddImagesResponse["failed"],
       appUrl: pick(data, "appUrl"),

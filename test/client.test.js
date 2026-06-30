@@ -106,38 +106,38 @@ test("musicLibrary returns tracks and voice languages", async () => {
   assert.deepEqual(res.voiceLanguages, ["English"]);
 });
 
-test("listProjects returns projects", async () => {
-  const fetch = fakeFetch({ text: JSON.stringify({ projects: [{ projectId: "p1", name: "Listing", photoCount: 3, appUrl: "https://app.pedra.ai/?projectId=p1" }] }) });
+test("listProperties returns properties", async () => {
+  const fetch = fakeFetch({ text: JSON.stringify({ properties: [{ propertyId: "p1", name: "Listing", photoCount: 3, appUrl: "https://app.pedra.ai/?propertyId=p1" }] }) });
   const pedra = new Pedra("k", { fetch });
-  const res = await pedra.listProjects();
-  assert.equal(fetch.calls[0].url, "https://app.pedra.ai/api/list_projects");
-  assert.equal(res.projects[0].projectId, "p1");
-  assert.equal(res.projects[0].photoCount, 3);
+  const res = await pedra.listProperties();
+  assert.equal(fetch.calls[0].url, "https://app.pedra.ai/api/list_properties");
+  assert.equal(res.properties[0].propertyId, "p1");
+  assert.equal(res.properties[0].photoCount, 3);
 });
 
-test("listProjectImages returns image URLs", async () => {
-  const fetch = fakeFetch({ text: JSON.stringify({ projectId: "p1", images: [{ imageId: "i1", url: "https://img.pedra.ai/i1" }] }) });
+test("listPropertyImages returns image URLs", async () => {
+  const fetch = fakeFetch({ text: JSON.stringify({ propertyId: "p1", images: [{ imageId: "i1", url: "https://img.pedra.ai/i1" }] }) });
   const pedra = new Pedra("k", { fetch });
-  const res = await pedra.listProjectImages({ projectId: "p1" });
-  assert.equal(fetch.calls[0].url, "https://app.pedra.ai/api/list_project_images");
-  assert.equal(fetch.calls[0].body.projectId, "p1");
+  const res = await pedra.listPropertyImages({ propertyId: "p1" });
+  assert.equal(fetch.calls[0].url, "https://app.pedra.ai/api/list_property_images");
+  assert.equal(fetch.calls[0].body.propertyId, "p1");
   assert.equal(res.images[0].url, "https://img.pedra.ai/i1");
 });
 
-test("createProject returns id and appUrl", async () => {
-  const fetch = fakeFetch({ text: JSON.stringify({ message: "Project created", projectId: "p2", appUrl: "https://app.pedra.ai/?projectId=p2" }) });
+test("createProperty returns id and appUrl", async () => {
+  const fetch = fakeFetch({ text: JSON.stringify({ message: "Property created", propertyId: "p2", appUrl: "https://app.pedra.ai/?propertyId=p2" }) });
   const pedra = new Pedra("k", { fetch });
-  const res = await pedra.createProject({ name: "New listing" });
-  assert.equal(fetch.calls[0].url, "https://app.pedra.ai/api/create_project");
-  assert.equal(res.projectId, "p2");
-  assert.match(res.appUrl, /projectId=p2/);
+  const res = await pedra.createProperty({ name: "New listing" });
+  assert.equal(fetch.calls[0].url, "https://app.pedra.ai/api/create_property");
+  assert.equal(res.propertyId, "p2");
+  assert.match(res.appUrl, /propertyId=p2/);
 });
 
-test("addImagesToProject posts urls and returns added", async () => {
-  const fetch = fakeFetch({ text: JSON.stringify({ message: "Added 1 image(s)", projectId: "p1", added: [{ imageId: "i9", url: "https://img.pedra.ai/i9" }], failed: [] }) });
+test("addImagesToProperty posts urls and returns added", async () => {
+  const fetch = fakeFetch({ text: JSON.stringify({ message: "Added 1 image(s)", propertyId: "p1", added: [{ imageId: "i9", url: "https://img.pedra.ai/i9" }], failed: [] }) });
   const pedra = new Pedra("k", { fetch });
-  const res = await pedra.addImagesToProject({ projectId: "p1", imageUrls: ["https://x/a.jpg"] });
-  assert.equal(fetch.calls[0].url, "https://app.pedra.ai/api/add_images_to_project");
+  const res = await pedra.addImagesToProperty({ propertyId: "p1", imageUrls: ["https://x/a.jpg"] });
+  assert.equal(fetch.calls[0].url, "https://app.pedra.ai/api/add_images_to_property");
   assert.deepEqual(fetch.calls[0].body.imageUrls, ["https://x/a.jpg"]);
   assert.equal(res.added[0].url, "https://img.pedra.ai/i9");
 });
