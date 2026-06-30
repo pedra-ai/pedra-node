@@ -67,6 +67,81 @@ test("throws when a long request fails with HTTP 200 + error body", async () => 
   await assert.rejects(() => pedra.createVideo({ images: [{ imageUrl: "https://img" }] }), PedraApiError);
 });
 
+test("updateVideo posts videoId and returns the new URL", async () => {
+  const fetch = fakeFetch({ text: JSON.stringify({ message: "updated", videoId: "v1", videoUrl: "https://v/2" }) });
+  const pedra = new Pedra("k", { fetch });
+  const res = await pedra.updateVideo({ videoId: "v1", music: { track: "cinematic" } });
+  assert.equal(fetch.calls[0].url, "https://app.pedra.ai/api/update_video");
+  assert.equal(fetch.calls[0].body.videoId, "v1");
+  assert.equal(fetch.calls[0].body.music.track, "cinematic");
+  assert.equal(res.videoId, "v1");
+  assert.equal(res.videoUrl, "https://v/2");
+});
+
+test("generateVoice returns an audioId", async () => {
+  const fetch = fakeFetch({ text: JSON.stringify({ audioId: "a1", audioUrl: "https://aud/1", duration: 7 }) });
+  const pedra = new Pedra("k", { fetch });
+  const res = await pedra.generateVoice({ text: "A bright home.", language: "Español" });
+  assert.equal(fetch.calls[0].url, "https://app.pedra.ai/api/generate_voice");
+  assert.equal(fetch.calls[0].body.text, "A bright home.");
+  assert.equal(res.audioId, "a1");
+  assert.equal(res.duration, 7);
+});
+
+test("generateVoiceScript returns script text", async () => {
+  const fetch = fakeFetch({ text: JSON.stringify({ script: "Lovely place." }) });
+  const pedra = new Pedra("k", { fetch });
+  const res = await pedra.generateVoiceScript({ images: ["https://a"] });
+  assert.equal(fetch.calls[0].url, "https://app.pedra.ai/api/generate_voice_script");
+  assert.equal(res.script, "Lovely place.");
+});
+
+test("musicLibrary returns tracks and voice languages", async () => {
+  const fetch = fakeFetch({ text: JSON.stringify({ tracks: [{ track: "chill", label: "Chill Beats" }], variantsPerTrack: 6, defaultTrack: "chill", voiceLanguages: ["English"] }) });
+  const pedra = new Pedra("k", { fetch });
+  const res = await pedra.musicLibrary();
+  assert.equal(res.defaultTrack, "chill");
+  assert.equal(res.variantsPerTrack, 6);
+  assert.equal(res.tracks[0].track, "chill");
+  assert.deepEqual(res.voiceLanguages, ["English"]);
+});
+
+test("listProjects returns projects", async () => {
+  const fetch = fakeFetch({ text: JSON.stringify({ projects: [{ projectId: "p1", name: "Listing", photoCount: 3, appUrl: "https://app.pedra.ai/?projectId=p1" }] }) });
+  const pedra = new Pedra("k", { fetch });
+  const res = await pedra.listProjects();
+  assert.equal(fetch.calls[0].url, "https://app.pedra.ai/api/list_projects");
+  assert.equal(res.projects[0].projectId, "p1");
+  assert.equal(res.projects[0].photoCount, 3);
+});
+
+test("listProjectImages returns image URLs", async () => {
+  const fetch = fakeFetch({ text: JSON.stringify({ projectId: "p1", images: [{ imageId: "i1", url: "https://img.pedra.ai/i1" }] }) });
+  const pedra = new Pedra("k", { fetch });
+  const res = await pedra.listProjectImages({ projectId: "p1" });
+  assert.equal(fetch.calls[0].url, "https://app.pedra.ai/api/list_project_images");
+  assert.equal(fetch.calls[0].body.projectId, "p1");
+  assert.equal(res.images[0].url, "https://img.pedra.ai/i1");
+});
+
+test("createProject returns id and appUrl", async () => {
+  const fetch = fakeFetch({ text: JSON.stringify({ message: "Project created", projectId: "p2", appUrl: "https://app.pedra.ai/?projectId=p2" }) });
+  const pedra = new Pedra("k", { fetch });
+  const res = await pedra.createProject({ name: "New listing" });
+  assert.equal(fetch.calls[0].url, "https://app.pedra.ai/api/create_project");
+  assert.equal(res.projectId, "p2");
+  assert.match(res.appUrl, /projectId=p2/);
+});
+
+test("addImagesToProject posts urls and returns added", async () => {
+  const fetch = fakeFetch({ text: JSON.stringify({ message: "Added 1 image(s)", projectId: "p1", added: [{ imageId: "i9", url: "https://img.pedra.ai/i9" }], failed: [] }) });
+  const pedra = new Pedra("k", { fetch });
+  const res = await pedra.addImagesToProject({ projectId: "p1", imageUrls: ["https://x/a.jpg"] });
+  assert.equal(fetch.calls[0].url, "https://app.pedra.ai/api/add_images_to_project");
+  assert.deepEqual(fetch.calls[0].body.imageUrls, ["https://x/a.jpg"]);
+  assert.equal(res.added[0].url, "https://img.pedra.ai/i9");
+});
+
 test("credits() returns plan and creditsRemaining", async () => {
   const fetch = fakeFetch({ text: JSON.stringify({ plan: "pro", creditsRemaining: 42 }) });
   const pedra = new Pedra("k", { fetch });

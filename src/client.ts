@@ -16,6 +16,19 @@ import type {
   BlurParams,
   FeedbackParams,
   CreateVideoParams,
+  UpdateVideoParams,
+  GenerateVoiceScriptParams,
+  ScriptResponse,
+  GenerateVoiceParams,
+  VoiceResponse,
+  MusicLibraryResponse,
+  ProjectsResponse,
+  ListProjectImagesParams,
+  ProjectImagesResponse,
+  CreateProjectParams,
+  ProjectResponse,
+  AddImagesToProjectParams,
+  AddImagesResponse,
 } from "./types";
 
 const DEFAULT_BASE_URL = "https://app.pedra.ai/api";
@@ -124,6 +137,132 @@ export class Pedra {
       message: pick(data, "message"),
       videoId: pick(data, "videoId") ?? "",
       videoUrl: pick(data, "videoUrl") ?? "",
+      raw: data,
+    };
+  }
+
+  /**
+   * Edit an existing video without re-rendering unchanged clips. Only new or
+   * changed photos re-animate (and cost credits); reordering, music, voice,
+   * branding and text re-stitch for free. Blocks server-side until the new
+   * video is rendered and returns its URL. (`/update_video`)
+   */
+  async updateVideo(params: UpdateVideoParams): Promise<VideoResponse> {
+    const data = await this.post("/update_video", params);
+    return {
+      message: pick(data, "message"),
+      videoId: pick(data, "videoId") ?? params.videoId,
+      videoUrl: pick(data, "videoUrl") ?? "",
+      raw: data,
+    };
+  }
+
+  /**
+   * Generate a voiceover script from photos (and optional property facts).
+   * GPT-4o vision reads the images so the script reflects what's shown. Feed
+   * the result to {@link Pedra.generateVoice}. (`/generate_voice_script`)
+   */
+  async generateVoiceScript(
+    params: GenerateVoiceScriptParams,
+  ): Promise<ScriptResponse> {
+    const data = await this.post("/generate_voice_script", params);
+    return {
+      message: pick(data, "message"),
+      script: pick(data, "script") ?? "",
+      raw: data,
+    };
+  }
+
+  /**
+   * Render a voiceover from a script via TTS. Returns an `audioId` to pass to a
+   * video's `voice.audioId` (which also drives synced subtitles).
+   * (`/generate_voice`)
+   */
+  async generateVoice(params: GenerateVoiceParams): Promise<VoiceResponse> {
+    const data = await this.post("/generate_voice", params);
+    return {
+      message: pick(data, "message"),
+      audioId: pick(data, "audioId") ?? "",
+      audioUrl: pick(data, "audioUrl") ?? "",
+      alignmentUrl: pick(data, "alignmentUrl"),
+      duration: pick(data, "duration"),
+      raw: data,
+    };
+  }
+
+  /**
+   * List the background-music catalog: the valid `music.track` values (genre
+   * keys) and the voice languages. Read-only. (`/music_library`)
+   */
+  async musicLibrary(): Promise<MusicLibraryResponse> {
+    const data = await this.post("/music_library", {});
+    return {
+      tracks: (pick(data, "tracks") ?? []) as MusicLibraryResponse["tracks"],
+      variantsPerTrack: Number(pick(data, "variantsPerTrack") ?? 0),
+      defaultTrack: pick(data, "defaultTrack") ?? "",
+      voiceLanguages: (pick(data, "voiceLanguages") ?? []) as string[],
+      raw: data,
+    };
+  }
+
+  /**
+   * List the account's projects (id, name, photo count, and a deep link to
+   * open each in Pedra). Use it to find photos already in the account.
+   * (`/list_projects`)
+   */
+  async listProjects(): Promise<ProjectsResponse> {
+    const data = await this.post("/list_projects", {});
+    return {
+      projects: (pick(data, "projects") ?? []) as ProjectsResponse["projects"],
+      raw: data,
+    };
+  }
+
+  /**
+   * List a project's photos as public URLs — ready to pass to
+   * {@link Pedra.createVideo} or the image-editing methods. (`/list_project_images`)
+   */
+  async listProjectImages(
+    params: ListProjectImagesParams,
+  ): Promise<ProjectImagesResponse> {
+    const data = await this.post("/list_project_images", params);
+    return {
+      projectId: pick(data, "projectId") ?? params.projectId,
+      name: pick(data, "name") ?? null,
+      images: (pick(data, "images") ?? []) as ProjectImagesResponse["images"],
+      raw: data,
+    };
+  }
+
+  /**
+   * Create a project. Returns its id and an `appUrl` to open it in Pedra (the
+   * way to add brand-new local photos, which can't be sent through the API).
+   * (`/create_project`)
+   */
+  async createProject(params: CreateProjectParams = {}): Promise<ProjectResponse> {
+    const data = await this.post("/create_project", params);
+    return {
+      message: pick(data, "message"),
+      projectId: pick(data, "projectId") ?? "",
+      appUrl: pick(data, "appUrl"),
+      raw: data,
+    };
+  }
+
+  /**
+   * Add photos to a project by URL — the server fetches and stores each one,
+   * so any public https image URL works. (`/add_images_to_project`)
+   */
+  async addImagesToProject(
+    params: AddImagesToProjectParams,
+  ): Promise<AddImagesResponse> {
+    const data = await this.post("/add_images_to_project", params);
+    return {
+      message: pick(data, "message"),
+      projectId: pick(data, "projectId") ?? params.projectId,
+      added: (pick(data, "added") ?? []) as AddImagesResponse["added"],
+      failed: (pick(data, "failed") ?? []) as AddImagesResponse["failed"],
+      appUrl: pick(data, "appUrl"),
       raw: data,
     };
   }

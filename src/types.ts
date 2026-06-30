@@ -166,14 +166,184 @@ export interface VideoImage {
   };
 }
 
+/** Voiceover settings for a video. */
+export interface VideoVoice {
+  enabled?: boolean;
+  /**
+   * Id of a voiceover rendered with {@link Pedra.generateVoice}. This is the
+   * handle the pipeline resolves to attach the narration (and its synced
+   * subtitles). Prefer this over `audioUrl`.
+   */
+  audioId?: string;
+  /** Legacy alias for `audioId`. */
+  audioUrl?: string;
+  /** Burn in word-synced subtitles from the voiceover. Defaults to true. */
+  showSubtitles?: boolean;
+}
+
 export interface CreateVideoParams {
   images: VideoImage[];
   music?: { enabled?: boolean; track?: string };
-  voice?: { enabled?: boolean; audioUrl?: string };
+  voice?: VideoVoice;
   branding?: { showWatermark?: boolean; showProfessionalPicture?: boolean };
   endingTitle?: string;
   endingSubtitle?: string;
   /** Force a vertical (9:16) video regardless of source aspect ratio. */
   isVertical?: boolean;
   propertyCharacteristics?: Array<{ label: string; value: string }>;
+}
+
+/**
+ * Params for {@link Pedra.updateVideo}. Edits an existing video without
+ * re-rendering unchanged clips — only new/changed photos re-animate (and cost
+ * credits); reordering, music, voice, branding and text re-stitch for free.
+ *
+ * Every field except `videoId` is optional and patch-style: omit `images` to
+ * change only audio/text/branding (the timeline is preserved), and omit
+ * `music`/`voice`/`branding`/ending text to keep their current values.
+ */
+export interface UpdateVideoParams {
+  /** Id of the video to edit (from {@link VideoResponse.videoId}). */
+  videoId: string;
+  /**
+   * Full ordered image list to rebuild the timeline. A clip whose photo +
+   * effect (+ second photo for transitions) matches an existing one is reused
+   * as-is. Omit to keep the current timeline and edit only audio/text.
+   */
+  images?: VideoImage[];
+  music?: { enabled?: boolean; track?: string };
+  voice?: VideoVoice;
+  branding?: { showWatermark?: boolean; showProfessionalPicture?: boolean };
+  endingTitle?: string;
+  endingSubtitle?: string;
+  isVertical?: boolean;
+  propertyCharacteristics?: Array<{ label: string; value: string }>;
+}
+
+/** Params for {@link Pedra.generateVoiceScript}. */
+export interface GenerateVoiceScriptParams {
+  /**
+   * Photos to base the script on — URLs or `{ imageUrl }` objects. GPT-4o
+   * vision reads them so the script reflects what's actually shown.
+   */
+  images?: Array<string | { imageUrl: string }>;
+  /** Property facts to weave in (e.g. `[{ label: "Bedrooms", value: "3" }]`). */
+  propertyCharacteristics?: Array<{ label: string; value: string }>;
+  /** Script language, e.g. "English", "Español". Defaults to "English". */
+  language?: string;
+}
+
+/** Response from {@link Pedra.generateVoiceScript}. */
+export interface ScriptResponse {
+  message?: string;
+  /** The generated voiceover script text. */
+  script: string;
+  raw: unknown;
+}
+
+/** Params for {@link Pedra.generateVoice}. */
+export interface GenerateVoiceParams {
+  /** The script to narrate (max 1000 characters). */
+  text: string;
+  /** Voice language, e.g. "English", "Español". Defaults to "English". */
+  language?: string;
+}
+
+/** Response from {@link Pedra.generateVoice}. */
+export interface VoiceResponse {
+  message?: string;
+  /** Pass this to a video's `voice.audioId` to attach the narration. */
+  audioId: string;
+  /** Public URL of the rendered mp3. */
+  audioUrl: string;
+  /** URL of the word-alignment JSON used for synced subtitles, if any. */
+  alignmentUrl?: string;
+  /** Approximate duration in seconds. */
+  duration?: number;
+  raw: unknown;
+}
+
+/** A background-music option for a video's `music.track`. */
+export interface MusicTrack {
+  track: string;
+  label: string;
+}
+
+/** Response from {@link Pedra.musicLibrary}. */
+export interface MusicLibraryResponse {
+  /** Valid `music.track` values with display labels. */
+  tracks: MusicTrack[];
+  variantsPerTrack: number;
+  defaultTrack: string;
+  /** Languages accepted by {@link Pedra.generateVoice} / generateVoiceScript. */
+  voiceLanguages: string[];
+  raw: unknown;
+}
+
+/** A project in the account's library. */
+export interface PedraProject {
+  projectId: string;
+  name: string;
+  createdAt?: string;
+  /** Number of photos in the project. */
+  photoCount?: number;
+  /** Deep link that opens this project in the Pedra web app. */
+  appUrl?: string;
+}
+
+/** Response from {@link Pedra.listProjects}. */
+export interface ProjectsResponse {
+  projects: PedraProject[];
+  raw: unknown;
+}
+
+/** A photo in a project. */
+export interface ProjectImage {
+  imageId: string;
+  /** Public URL — pass straight to {@link Pedra.createVideo} or the edit tools. */
+  url: string;
+  name?: string | null;
+  aspectRatio?: number | null;
+}
+
+export interface ListProjectImagesParams {
+  projectId: string;
+}
+
+/** Response from {@link Pedra.listProjectImages}. */
+export interface ProjectImagesResponse {
+  projectId: string;
+  name?: string | null;
+  images: ProjectImage[];
+  raw: unknown;
+}
+
+export interface CreateProjectParams {
+  /** Project name, e.g. the listing address. */
+  name?: string;
+}
+
+/** Response from {@link Pedra.createProject}. */
+export interface ProjectResponse {
+  message?: string;
+  projectId: string;
+  /** Open this in the Pedra web app to upload local photos. */
+  appUrl?: string;
+  raw: unknown;
+}
+
+export interface AddImagesToProjectParams {
+  projectId: string;
+  /** Up to 20 image URLs. The server fetches and stores each one. */
+  imageUrls: string[];
+}
+
+/** Response from {@link Pedra.addImagesToProject}. */
+export interface AddImagesResponse {
+  message?: string;
+  projectId: string;
+  added: Array<{ imageId: string; url: string; aspectRatio?: number }>;
+  failed: Array<{ url: string; error: string }>;
+  appUrl?: string;
+  raw: unknown;
 }
