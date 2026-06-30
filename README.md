@@ -83,6 +83,14 @@ interface ImageResponse {
 | `remove({ imageUrl, maskUrl })` | `/remove_object` | `ImageResponse` |
 | `blur({ imageUrl, objectsToBlur })` | `/blur` | `ImageResponse` |
 | `createVideo({ images, ... })` | `/create_video` | `VideoResponse` |
+| `updateVideo({ videoId, ... })` | `/update_video` | `VideoResponse` |
+| `generateVoiceScript({ images, ... })` | `/generate_voice_script` | `ScriptResponse` |
+| `generateVoice({ text, ... })` | `/generate_voice` | `VoiceResponse` |
+| `musicLibrary()` | `/music_library` | `MusicLibraryResponse` |
+| `listProperties()` | `/list_properties` | `PropertiesResponse` |
+| `listPropertyImages({ propertyId })` | `/list_property_images` | `PropertyImagesResponse` |
+| `createProperty({ name? })` | `/create_property` | `PropertyResponse` |
+| `addImagesToProperty({ propertyId, imageUrls })` | `/add_images_to_property` | `AddImagesResponse` |
 | `credits()` | `/credits` | `CreditsResponse` |
 | `feedback({ imageUrl \| imageId, vote, comment?, creditBack? })` | `/feedback` | `FeedbackResponse` |
 
