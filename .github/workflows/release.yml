@@ -1,0 +1,36 @@
+name: Release
+
+# Tag a version to publish @pedra-ai/sdk to npm (with provenance):
+#   npm version patch|minor|major   # bumps package.json + creates the tag
+#   git push origin main --tags
+# or bump the version by hand, then: git tag v0.2.1 && git push origin v0.2.1
+#
+# Requires one repo secret: NPM_TOKEN (an npm automation token for the @pedra-ai org).
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+  id-token: write # npm provenance
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          registry-url: "https://registry.npmjs.org"
+
+      - run: npm install
+      - run: npm test
+
+      - name: Publish to npm
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
