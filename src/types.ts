@@ -1,4 +1,5 @@
 /** Strength of the AI transformation. The API defaults to "Medium". */
+/** @deprecated `creativity` is ignored by the API since September 2026. */
 export type Creativity = "Low" | "Medium" | "High";
 
 /** Thumbs up/down vote. An empty string clears a previous vote. */
@@ -97,12 +98,20 @@ export interface FurnishParams {
   roomType?: string;
   /** e.g. "Minimalist", "Scandinavian", "Modern". */
   style?: string;
+  /**
+   * @deprecated Ignored by the API since September 2026 — there is one level, which keeps
+   * walls, doors, windows and the camera angle. Accepted so existing code keeps working.
+   */
   creativity?: Creativity;
 }
 
 export interface RenovationParams {
   imageUrl: string;
   style?: string;
+  /**
+   * @deprecated Ignored by the API since September 2026 — there is one level, which keeps
+   * walls, doors, windows and the camera angle. Accepted so existing code keeps working.
+   */
   creativity?: Creativity;
   /**
    * Whether the renovated room should be furnished. Accepts a boolean

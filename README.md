@@ -76,8 +76,8 @@ interface ImageResponse {
 | `enhance({ imageUrl, preserveOriginalFraming? })` | `/enhance` | `ImageResponse` |
 | `enhanceAndCorrectPerspective({ imageUrl, preserveOriginalFraming? })` | `/enhance_and_correct_perspective` | `ImageResponse` |
 | `empty({ imageUrl })` | `/empty_room` | `ImageResponse` |
-| `furnish({ imageUrl, roomType?, style?, creativity? })` | `/furnish` | `ImageResponse` |
-| `renovation({ imageUrl, style?, creativity?, furnish?, roomType? })` | `/renovation` | `ImageResponse` |
+| `furnish({ imageUrl, roomType?, style? })` | `/furnish` | `ImageResponse` |
+| `renovation({ imageUrl, style?, furnish?, roomType? })` | `/renovation` | `ImageResponse` |
 | `editViaPrompt({ imageUrl, prompt })` | `/edit_via_prompt` | `ImageResponse` |
 | `sky({ imageUrl, skyStyle? })` | `/sky_blue` | `ImageResponse` |
 | `remove({ imageUrl, maskUrl })` | `/remove_object` | `ImageResponse` |
@@ -103,8 +103,8 @@ await pedra.enhance({ imageUrl, preserveOriginalFraming: true });
 // Empty a room
 const { url } = await pedra.empty({ imageUrl });
 
-// Renovate, furnished, high creativity
-await pedra.renovation({ imageUrl, style: "Scandinavian", creativity: "High", furnish: true });
+// Renovate, furnished
+await pedra.renovation({ imageUrl, style: "Scandinavian", furnish: true });
 
 // Edit via prompt
 await pedra.editViaPrompt({ imageUrl, prompt: "Add a large green plant in the corner" });
