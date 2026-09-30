@@ -1,7 +1,7 @@
 {
   "name": "@pedra-ai/sdk",
-  "version": "0.3.0",
-  "description": "Official JavaScript/TypeScript SDK for the Pedra API — AI photo editing for real estate: virtual staging, renovation, room emptying, enhancement, sky replacement, object removal/blur, and video.",
+  "version": "0.4.0",
+  "description": "Official JavaScript/TypeScript SDK for the Pedra API — AI photo editing for real estate: virtual staging, renovation, room emptying, enhancement, sky replacement, object removal/blur, video, and hosted 360° virtual tours.",
   "publishConfig": {
     "access": "public"
   },
@@ -17,6 +17,8 @@
     "image-editing",
     "image-enhancement",
     "real-estate-photography",
+    "virtual-tour",
+    "360",
     "sdk"
   ],
   "license": "MIT",

@@ -256,6 +256,12 @@ export interface GenerateVoiceParams {
   text: string;
   /** Voice language, e.g. "English", "Español". Defaults to "English". */
   language?: string;
+  /**
+   * Which voice narrates. See {@link Pedra.musicLibrary}'s `voicesByLanguage`
+   * for the IDs offered for each language — a voice is only valid for the
+   * language it's listed under. Defaults to that language's first voice.
+   */
+  voiceId?: string;
 }
 
 /** Response from {@link Pedra.generateVoice}. */
@@ -286,7 +292,30 @@ export interface MusicLibraryResponse {
   defaultTrack: string;
   /** Languages accepted by {@link Pedra.generateVoice} / generateVoiceScript. */
   voiceLanguages: string[];
+  /**
+   * Valid `voiceId` values for {@link Pedra.generateVoice}, grouped by the
+   * language they're offered for. Voices are native to their language, so a
+   * voiceId is only accepted alongside the language it's listed under.
+   */
+  voicesByLanguage: LanguageVoices[];
   raw: unknown;
+}
+
+/** The voices offered for one language. */
+export interface LanguageVoices {
+  language: string;
+  voices: VoiceOption[];
+}
+
+/** A selectable narration voice. */
+export interface VoiceOption {
+  voiceId: string;
+  name: string;
+  gender: string;
+  /** The voice's native accent, e.g. "british". */
+  accent: string;
+  /** Character of the voice, e.g. "calm". */
+  descriptor: string;
 }
 
 /** A property in the account's library. */
@@ -315,8 +344,19 @@ export interface PropertyImage {
   aspectRatio?: number | null;
 }
 
+/**
+ * Which images of a property: regular photos (`"photo"`, the default) or 360°
+ * photos (`"360"`, the equirectangular panoramas a virtual tour is built from).
+ */
+export type PropertyImageType = "photo" | "360";
+
 export interface ListPropertyImagesParams {
   propertyId: string;
+  /**
+   * `"360"` lists the property's 360° photos instead of its regular photos.
+   * Their `imageId`s are the scenes of a virtual tour. Defaults to `"photo"`.
+   */
+  type?: PropertyImageType;
 }
 
 /** Response from {@link Pedra.listPropertyImages}. */
@@ -343,16 +383,344 @@ export interface PropertyResponse {
 
 export interface AddImagesToPropertyParams {
   propertyId: string;
-  /** Up to 20 image URLs. The server fetches and stores each one. */
+  /**
+   * Image URLs (or `data:` URIs) the server fetches and stores: up to 20
+   * photos, or up to 10 when `type` is `"360"`.
+   */
   imageUrls: string[];
+  /**
+   * `"360"` adds 360° photos: each is checked to be 2:1 equirectangular and
+   * stored the way the Pedra app stores them, ready to become a virtual tour.
+   * Defaults to `"photo"`.
+   */
+  type?: PropertyImageType;
 }
 
 /** Response from {@link Pedra.addImagesToProperty}. */
 export interface AddImagesResponse {
   message?: string;
   propertyId: string;
-  added: Array<{ imageId: string; url: string; aspectRatio?: number }>;
-  failed: Array<{ url: string; error: string }>;
+  /** `"360"` when 360° photos were added. */
+  type?: PropertyImageType;
+  added: Array<{ imageId: string; url: string; aspectRatio?: number; path?: string }>;
+  failed: Array<{ url: string; error: string; path?: string }>;
   appUrl?: string;
   raw: unknown;
+}
+
+// --- virtual tours -----------------------------------------------------------
+
+/** Language of the tour page and of the AI room names. Defaults to `"en"`. */
+export type TourLanguage = "en" | "es" | "fr" | "de" | "it" | "pt";
+
+/**
+ * How rooms get connected with navigation points:
+ * - `"sequential"` (default): each room is linked to the next, both ways, in
+ *   the order you pass them. Costs `max(3, ceil(rooms / 3))` credits.
+ * - `"smart"`: AI compares every pair and links the rooms that visibly
+ *   connect. Slower; up to 40 rooms; 5–160 credits by room count.
+ * - `"none"`: free, no navigation points (place them with `updateVirtualTour`).
+ */
+export type TourLinking = "sequential" | "smart" | "none";
+
+/** A tour is built in the background: poll until `"ready"` or `"failed"`. */
+export type TourStatus = "processing" | "ready" | "failed";
+
+/** One room of a tour to create or append. Pass exactly one of `imageUrl` / `imageId`. */
+export interface TourSceneInput {
+  /** A 360° photo (2:1 equirectangular): public https URL or `data:` URI. */
+  imageUrl?: string;
+  /** Id of a 360° photo already in the property (see `listPropertyImages({ type: "360" })`). */
+  imageId?: string;
+  /** Room name shown in the tour, e.g. "Kitchen". Omit and AI names the room. */
+  name?: string;
+}
+
+export interface CreateVirtualTourParams {
+  /**
+   * The rooms in walking order (a plain string is treated as an `imageUrl`).
+   * Omit, and pass `propertyId`, to use every 360° photo in that property in
+   * upload order.
+   */
+  scenes?: Array<TourSceneInput | string>;
+  /** Shorthand for `scenes: imageUrls.map((imageUrl) => ({ imageUrl }))`. */
+  imageUrls?: string[];
+  /** Property the tour belongs to. Omit to create a new property. One tour per property. */
+  propertyId?: string;
+  /** Tour title (also the new property's name), e.g. the listing address. */
+  name?: string;
+  /** Defaults to `"sequential"`. */
+  linking?: TourLinking;
+  language?: TourLanguage;
+}
+
+/** Build progress while `status` is `"processing"`. */
+export interface TourProgress {
+  stage: "queued" | "importing" | "naming" | "linking" | string;
+  done?: number;
+  total?: number;
+}
+
+/** A room of a tour. `sceneId` is the id of its 360° photo. */
+export interface TourScene {
+  sceneId: string;
+  name: string | null;
+  /** Stored photo URL (on a finished tour). */
+  imageUrl?: string;
+  /** Where the photo came from, on a create/append response: the URL, `"data: URI"` or `"property"`. */
+  source?: string;
+}
+
+/** A one-direction navigation point from one room to another. */
+export interface TourLink {
+  linkId?: string | null;
+  fromSceneId: string;
+  toSceneId: string;
+  /** Horizontal angle in the from-scene, −180..180 (0 = centre of the photo, negative = left). */
+  yaw: number;
+  /** Vertical angle, −90..90 (0 = horizon). */
+  pitch?: number;
+  aiGenerated?: boolean;
+}
+
+/** A scene that could not be imported. */
+export interface FailedScene {
+  index?: number;
+  imageUrl?: string;
+  error: string;
+}
+
+export interface TourSettings {
+  navigationStyle: "white" | "blue";
+  navigationSize: "small" | "medium" | "large";
+  showLabels: boolean;
+  language: TourLanguage;
+}
+
+/** A virtual tour, as returned by the tour endpoints. */
+export interface VirtualTour {
+  tourId: string;
+  propertyId: string | null;
+  name: string | null;
+  status: TourStatus;
+  /** Public, shareable tour page. */
+  tourUrl: string;
+  /** `<iframe>` snippet to embed the tour on a website. */
+  embedCode: string;
+  /** Opens the tour's property in the Pedra web app. */
+  appUrl: string | null;
+  /** `false` on the free plan: the tour builds, but its public link shows an upgrade page. */
+  shareable: boolean;
+  shareableNote?: string;
+  sceneCount: number;
+  linkCount: number;
+  coverImageUrl: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+  /** Present while `status` is `"processing"`. */
+  progress?: TourProgress;
+  /** Why the build failed, when `status` is `"failed"`. Failed builds cost nothing. */
+  error?: string;
+  /** Why the last `addVirtualTourScenes` failed (the tour stays `"ready"`). */
+  lastError?: string;
+  failedScenes?: FailedScene[];
+  /** Full detail (get / update / create responses). */
+  scenes?: TourScene[];
+  links?: TourLink[];
+  settings?: TourSettings;
+  raw: unknown;
+}
+
+/** Response from {@link Pedra.createVirtualTour} / {@link Pedra.addVirtualTourScenes}. */
+export interface VirtualTourJobResponse extends VirtualTour {
+  message?: string;
+  linking?: TourLinking;
+  /** Credits the linking step costs (charged only when linking starts). */
+  creditsCost?: number;
+  estimatedSeconds?: number;
+  /** The appended rooms (addVirtualTourScenes only). */
+  addedScenes?: TourScene[];
+}
+
+export interface ListVirtualToursParams {
+  /** Only this property's tour. */
+  propertyId?: string;
+}
+
+/** Response from {@link Pedra.listVirtualTours}: newest first, max 100, without scenes/links. */
+export interface VirtualToursResponse {
+  tours: Array<Omit<VirtualTour, "raw">>;
+  raw: unknown;
+}
+
+/**
+ * Params for {@link Pedra.updateVirtualTour}. Free and instant; validated all
+ * or nothing. Every field except `tourId` is optional.
+ */
+export interface UpdateVirtualTourParams {
+  tourId: string;
+  /** New tour title. */
+  name?: string;
+  /** New room names, as `{ [sceneId]: "Kitchen" }`. */
+  sceneNames?: Record<string, string>;
+  /** Every sceneId exactly once, in the new order. The first one opens the tour. */
+  sceneOrder?: string[];
+  /** sceneIds to take out (the photos stay in the property; their links go too). */
+  removeScenes?: string[];
+  /** REPLACES all navigation links. Each is one direction; add the return link separately. */
+  links?: Array<{ fromSceneId: string; toSceneId: string; yaw: number; pitch?: number }>;
+  navigationStyle?: "white" | "blue";
+  navigationSize?: "small" | "medium" | "large";
+  /** Always show room names next to the navigation points. */
+  showLabels?: boolean;
+  language?: TourLanguage;
+}
+
+export interface AddVirtualTourScenesParams {
+  tourId: string;
+  /** The new rooms, in walking order. imageId scenes must be 360° photos in the tour's property. */
+  scenes: Array<TourSceneInput | string>;
+  /**
+   * `"sequential"` (default) links only the new stretch: last existing room →
+   * first new room, then each new room to the next. Costs
+   * `max(3, ceil(newRooms / 3))` credits. `"none"` is free.
+   */
+  linking?: "sequential" | "none";
+}
+
+/** Response from {@link Pedra.deleteVirtualTour}. The 360° photos stay in the property. */
+export interface DeleteVirtualTourResponse {
+  message?: string;
+  tourId: string;
+  raw: unknown;
+}
+
+/**
+ * What an upload link accepts. `"any"` (the default): regular photos and 360°
+ * photos (2:1 images are detected and stored as 360° photos). `"360"`: only
+ * 360° photos — use it for virtual tours.
+ */
+export type UploadLinkType = "any" | "360";
+
+export interface CreateUploadLinkParams {
+  /** Property to upload into. Omit to create a new one named `name`. */
+  propertyId?: string;
+  /** Name for the new property. Ignored when `propertyId` is given. */
+  name?: string;
+  /** What the page accepts. Defaults to `"any"`. */
+  type?: UploadLinkType;
+  /** Language of the upload page. */
+  language?: TourLanguage;
+}
+
+/** Response from {@link Pedra.createUploadLink}. */
+export interface UploadLinkResponse {
+  message?: string;
+  /** No-login page (phone or computer, 24 h) where someone drops photos into the property. */
+  uploadUrl: string;
+  propertyId: string;
+  propertyName?: string;
+  /** What the page accepts (`"any"` or `"360"`). */
+  type?: UploadLinkType;
+  expiresAt?: string;
+  /** Most files one link takes (100). */
+  maxFiles?: number;
+  appUrl?: string;
+  raw: unknown;
+}
+
+// --- agent signup (no API key needed) ----------------------------------------
+
+/** Options for the signup functions, which run without an API key. */
+export interface AccessOptions {
+  /** Override the API base URL. Defaults to `https://app.pedra.ai/api`. */
+  baseUrl?: string;
+  /** Per-request timeout in ms. Defaults to 30000. */
+  timeout?: number;
+  /** Custom fetch implementation. */
+  fetch?: typeof fetch;
+}
+
+export interface RequestAccessParams {
+  /** The person's email. Pedra emails them a confirmation link (valid 30 min). */
+  email: string;
+  /** Shown to the person in the email and on the confirmation page, e.g. "Claude Code". */
+  agentName?: string;
+}
+
+/** Response from {@link requestAccess}. */
+export interface AccessRequestResponse {
+  /** Pass to {@link getAccessStatus} / {@link waitForAccess}. Keep it private: it redeems the key. */
+  requestId: string;
+  status: "pending";
+  expiresAt?: string;
+  /** Suggested delay before the first status check (5). */
+  pollAfterSeconds?: number;
+  message?: string;
+  raw: unknown;
+}
+
+export interface AccessPending {
+  status: "pending";
+  pollAfterSeconds?: number;
+  raw: unknown;
+}
+
+export interface AccessApproved {
+  status: "approved";
+  /** The account's API key: pass it to `new Pedra(apiKey)` and store it. */
+  apiKey: string;
+  email: string;
+  /** True when the account was created by this request. */
+  newAccount: boolean;
+  plan: string;
+  creditsRemaining: number;
+  appUrl?: string;
+  /**
+   * Present when the account has no credits left (new accounts start with
+   * the free trial): the person can get credits with a plan.
+   */
+  note?: string;
+  raw: unknown;
+}
+
+export interface AccessDenied {
+  status: "denied";
+  raw: unknown;
+}
+
+export interface AccessExpired {
+  status: "expired";
+  raw: unknown;
+}
+
+/** Response from {@link getAccessStatus}. Narrow on `status`. */
+export type AccessStatusResponse =
+  | AccessPending
+  | AccessApproved
+  | AccessDenied
+  | AccessExpired;
+
+export interface WaitForAccessOptions extends AccessOptions {
+  /** Delay between polls in ms. Defaults to 5000. */
+  intervalMs?: number;
+  /** Give up (throw a `PedraError`) after this many ms. Defaults to 1800000 (30 min, the link's lifetime). */
+  timeoutMs?: number;
+}
+
+export interface WaitForVirtualTourOptions {
+  /** Delay between polls in ms. Defaults to 5000. */
+  intervalMs?: number;
+  /** Give up (throw a `PedraError`) after this many ms. Defaults to 900000 (15 min). */
+  timeoutMs?: number;
+}
+
+export interface AddLocalPanoramasOptions {
+  /**
+   * Largest request body the helper builds, in bytes of base64 payload.
+   * Defaults to 45 MB (the API accepts 50 MB bodies). A single file larger
+   * than this once encoded (~33 MB on disk) is reported in `failed` — send it
+   * with {@link Pedra.createUploadLink} instead.
+   */
+  maxRequestBytes?: number;
 }

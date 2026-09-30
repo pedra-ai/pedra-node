@@ -16,17 +16,26 @@ export class PedraError extends Error {
  * the Pedra API uses a heartbeat for long requests, so a generation that runs
  * long and then fails comes back as HTTP 200 with an `{ error }` body — in that
  * case `status` is 200 but the call still rejects with this error). `body` is
- * the parsed JSON response when available.
+ * the parsed JSON response when available, and `code` its `code` field.
  */
 export class PedraApiError extends PedraError {
   readonly status?: number;
   readonly body?: unknown;
+  /**
+   * Machine-readable error code from the response body, when the API sends
+   * one: e.g. `"upload_limit"` / `"upload_link_limit"` (HTTP 429),
+   * `"rate_limited"`, `"disposable_email"`, `"unavailable"`, `"tour_exists"`.
+   */
+  readonly code?: string;
 
   constructor(message: string, status?: number, body?: unknown) {
     super(message);
     this.name = "PedraApiError";
     this.status = status;
     this.body = body;
+    const code =
+      body && typeof body === "object" ? (body as { code?: unknown }).code : undefined;
+    this.code = typeof code === "string" ? code : undefined;
     Object.setPrototypeOf(this, new.target.prototype);
   }
 }
