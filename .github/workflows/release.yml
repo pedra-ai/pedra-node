@@ -36,4 +36,9 @@ jobs:
       - run: npm test
 
       - name: Publish to npm
-        run: npm publish --provenance --access public
+        # No token: npm exchanges the workflow's OIDC identity for a one-off
+        # publish token. setup-node sets a placeholder NODE_AUTH_TOKEN, cleared
+        # here so npm can't try (and fail with a 404) on that instead.
+        run: npm publish --provenance --access public --loglevel verbose
+        env:
+          NODE_AUTH_TOKEN: ""
