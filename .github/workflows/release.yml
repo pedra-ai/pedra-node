@@ -5,7 +5,10 @@ name: Release
 #   git push origin main --tags
 # or bump the version by hand, then: git tag v0.2.1 && git push origin v0.2.1
 #
-# Requires one repo secret: NPM_TOKEN (an npm automation token for the @pedra-ai org).
+# npm publishing uses Trusted Publishing: npm checks this workflow's GitHub
+# OIDC identity (configured on the package's npm settings page: repo
+# pedra-ai/pedra-node, workflow release.yml), so there is no token to store or
+# renew. It needs npm >= 11.5.1, hence the npm upgrade step.
 
 on:
   push:
@@ -14,7 +17,7 @@ on:
 
 permissions:
   contents: read
-  id-token: write # npm provenance
+  id-token: write # npm trusted publishing + provenance
 
 jobs:
   release:
@@ -24,13 +27,13 @@ jobs:
 
       - uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 22
           registry-url: "https://registry.npmjs.org"
+
+      - run: npm install -g npm@latest
 
       - run: npm install
       - run: npm test
 
       - name: Publish to npm
         run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
