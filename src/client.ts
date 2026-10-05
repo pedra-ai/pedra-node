@@ -8,6 +8,7 @@ import {
 import type {
   ClientOptions,
   ImageResponse,
+  ImageSource,
   VideoResponse,
   CreditsResponse,
   FeedbackResponse,
@@ -116,7 +117,7 @@ export class Pedra {
 
   /** Enhance an image (lighting, color, sharpness). */
   async enhance(params: EnhanceParams): Promise<ImageResponse> {
-    return this.image(await this.post("/enhance", params));
+    return this.image(await this.post("/enhance", withHighFidelity(params)));
   }
 
   /** Enhance an image and correct vertical/horizontal perspective. */
@@ -124,7 +125,7 @@ export class Pedra {
     params: EnhanceAndCorrectPerspectiveParams,
   ): Promise<ImageResponse> {
     return this.image(
-      await this.post("/enhance_and_correct_perspective", params),
+      await this.post("/enhance_and_correct_perspective", withHighFidelity(params)),
     );
   }
 
@@ -618,11 +619,25 @@ export class Pedra {
       const u = (output as { url?: string }).url;
       if (typeof u === "string") urls = [u];
     }
+    const source = pick(data, "source");
     return {
       message: pick(data, "message") as string | undefined,
       urls,
       url: urls[0],
+      ...(source && typeof source === "object" ? { source: source as ImageSource } : {}),
       raw: data,
     };
   }
+}
+
+// `preserveOriginalFraming` was the SDK's name for what the API calls
+// `highFidelity`; the API never read it. Map it so older code gets what it asked for.
+function withHighFidelity<
+  T extends { highFidelity?: boolean; preserveOriginalFraming?: boolean },
+>(params: T): Omit<T, "preserveOriginalFraming"> {
+  const { preserveOriginalFraming, ...rest } = params;
+  if (rest.highFidelity === undefined && preserveOriginalFraming !== undefined) {
+    return { ...rest, highFidelity: preserveOriginalFraming };
+  }
+  return rest;
 }

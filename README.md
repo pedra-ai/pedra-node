@@ -94,16 +94,20 @@ interface ImageResponse {
   message?: string;
   urls: string[];     // every generated asset URL
   url?: string;       // convenience: the first URL
+  source?: { imageId: string; name: string | null }; // the original photo, when propertyId was sent
   raw: unknown;       // the untouched API response
 }
 ```
+
+Every image method also accepts `preserveAspectRatio`, `propertyId` and `name`
+(see [Saving edits into a property](#saving-edits-into-a-property)).
 
 ## Methods
 
 | Method | Endpoint | Returns |
 | --- | --- | --- |
-| `enhance({ imageUrl, preserveOriginalFraming? })` | `/enhance` | `ImageResponse` |
-| `enhanceAndCorrectPerspective({ imageUrl, preserveOriginalFraming? })` | `/enhance_and_correct_perspective` | `ImageResponse` |
+| `enhance({ imageUrl, highFidelity? })` | `/enhance` | `ImageResponse` |
+| `enhanceAndCorrectPerspective({ imageUrl, highFidelity? })` | `/enhance_and_correct_perspective` | `ImageResponse` |
 | `empty({ imageUrl })` | `/empty_room` | `ImageResponse` |
 | `furnish({ imageUrl, roomType?, style? })` | `/furnish` | `ImageResponse` |
 | `renovation({ imageUrl, style?, furnish?, roomType? })` | `/renovation` | `ImageResponse` |
@@ -119,7 +123,7 @@ interface ImageResponse {
 | `listProperties()` | `/list_properties` | `PropertiesResponse` |
 | `listPropertyImages({ propertyId, type? })` | `/list_property_images` | `PropertyImagesResponse` |
 | `createProperty({ name? })` | `/create_property` | `PropertyResponse` |
-| `addImagesToProperty({ propertyId, imageUrls, type? })` | `/add_images_to_property` | `AddImagesResponse` |
+| `addImagesToProperty({ propertyId, imageUrls, type?, names? })` | `/add_images_to_property` | `AddImagesResponse` |
 | `addLocalPanoramas(propertyId, paths, options?)` | `/add_images_to_property` (batched) | `AddImagesResponse` |
 | `createVirtualTour({ scenes \| imageUrls \| propertyId, name?, linking?, language? })` | `/create_virtual_tour` | `VirtualTourJobResponse` |
 | `getVirtualTour(tourId)` | `/get_virtual_tour` | `VirtualTour` |
@@ -135,8 +139,8 @@ interface ImageResponse {
 ### Examples
 
 ```ts
-// Enhance — preserve exact framing (verification verticals)
-await pedra.enhance({ imageUrl, preserveOriginalFraming: true });
+// Enhance, keeping the captured content exactly (verification verticals)
+await pedra.enhance({ imageUrl, highFidelity: true });
 
 // Empty a room
 const { url } = await pedra.empty({ imageUrl });
@@ -162,6 +166,22 @@ const { plan, creditsRemaining } = await pedra.credits();
 // Feedback + credit-back on a bad result
 await pedra.feedback({ imageUrl, vote: "down", comment: "Artifacts on the wall", creditBack: true });
 ```
+
+### Saving edits into a property
+
+Pass `propertyId` and the result is saved into that property's gallery, where
+it can be edited and downloaded from the Pedra app. Add `name` (e.g. the
+original file name) and, if the input photo isn't in the property yet, it's
+saved there under that name in the same call. The response's `source` ties the
+result back to it:
+
+```ts
+const res = await pedra.furnish({ imageUrl, propertyId, name: "IMG_0412.jpg" });
+res.source; // { imageId: "…", name: "IMG_0412.jpg" }
+```
+
+A photo already in the property keeps its name. The name is never drawn on the
+image.
 
 ### Creating a video
 

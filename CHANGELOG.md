@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.5.0
+
+- **Save edits into a property.** Every image method (`enhance`, `furnish`,
+  `empty`, `renovation`, `editViaPrompt`, `sky`, `remove`, `blur`,
+  `enhanceAndCorrectPerspective`) accepts `propertyId`, `name` and
+  `preserveAspectRatio` (shared `ImageEditOptions` type). With `propertyId`
+  the result lands in that property's gallery; with `name` too, the input
+  photo is saved there under that name in the same call.
+- `ImageResponse.source` (`{ imageId, name }`): the original photo a result was
+  made from, when `propertyId` was sent.
+- `addImagesToProperty` accepts `names`, one per image.
+- `enhance` / `enhanceAndCorrectPerspective` accept `highFidelity`, the API's
+  name for it. `preserveOriginalFraming` is deprecated: the API never read it,
+  so it is now sent as `highFidelity`.
+
 ## 0.4.0
 
 - **Virtual tours.** New methods for the Virtual Tour API: `createVirtualTour`,

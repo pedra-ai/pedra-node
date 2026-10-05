@@ -50,6 +50,45 @@ test("tolerates the heartbeat whitespace prefix", async () => {
   assert.equal(res.url, "https://x/3");
 });
 
+test("edits forward propertyId and name and return source", async () => {
+  const fetch = fakeFetch({
+    text: JSON.stringify({
+      output: [{ url: "https://x/4" }],
+      source: { imageId: "img1", name: "IMG_0412.jpg" },
+    }),
+  });
+  const pedra = new Pedra("k", { fetch });
+  const res = await pedra.furnish({ imageUrl: "https://img", propertyId: "p1", name: "IMG_0412.jpg" });
+  assert.deepEqual(fetch.calls[0].body, {
+    apiKey: "k",
+    imageUrl: "https://img",
+    propertyId: "p1",
+    name: "IMG_0412.jpg",
+  });
+  assert.deepEqual(res.source, { imageId: "img1", name: "IMG_0412.jpg" });
+});
+
+test("leaves source unset when the API sends none", async () => {
+  const fetch = fakeFetch({ text: JSON.stringify({ output: [{ url: "https://x/5" }] }) });
+  const pedra = new Pedra("k", { fetch });
+  const res = await pedra.enhance({ imageUrl: "https://img" });
+  assert.equal(res.source, undefined);
+});
+
+test("sends deprecated preserveOriginalFraming as highFidelity", async () => {
+  const fetch = fakeFetch({ text: JSON.stringify({ output: [{ url: "https://x/6" }] }) });
+  const pedra = new Pedra("k", { fetch });
+  await pedra.enhance({ imageUrl: "https://img", preserveOriginalFraming: true });
+  assert.deepEqual(fetch.calls[0].body, { apiKey: "k", imageUrl: "https://img", highFidelity: true });
+});
+
+test("addImagesToProperty forwards names", async () => {
+  const fetch = fakeFetch({ text: JSON.stringify({ propertyId: "p1", added: [], failed: [] }) });
+  const pedra = new Pedra("k", { fetch });
+  await pedra.addImagesToProperty({ propertyId: "p1", imageUrls: ["https://a"], names: ["front.jpg"] });
+  assert.deepEqual(fetch.calls[0].body.names, ["front.jpg"]);
+});
+
 test("throws on a 4xx error body", async () => {
   const fetch = fakeFetch({ ok: false, status: 403, text: JSON.stringify({ error: "Insufficient credits" }) });
   const pedra = new Pedra("k", { fetch });

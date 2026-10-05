@@ -40,8 +40,19 @@ export interface ImageResponse {
   urls: string[];
   /** Convenience accessor for the first generated URL. */
   url?: string;
+  /**
+   * The original photo the result was made from. Present when `propertyId`
+   * was sent and the photo is in that property (or was saved there via `name`).
+   */
+  source?: ImageSource;
   /** The raw, unmodified JSON body returned by the API. */
   raw: unknown;
+}
+
+/** The original photo an edit was made from, inside its property. */
+export interface ImageSource {
+  imageId: string;
+  name: string | null;
 }
 
 /** Response from {@link Pedra.createVideo}. */
@@ -72,27 +83,57 @@ export interface FeedbackResponse {
   [key: string]: unknown;
 }
 
-export interface EnhanceParams {
+/** Options every image-editing endpoint accepts. */
+export interface ImageEditOptions {
+  /**
+   * Return the result at the exact width and height of the input image
+   * (center-cropped to the original aspect ratio, never stretched). By default
+   * the output comes back at whatever size the AI model produces.
+   */
+  preserveAspectRatio?: boolean;
+  /**
+   * Id of the property (from `listProperties` or `createProperty`) this photo
+   * belongs to. The result is saved into that property's gallery, visible and
+   * editable in the Pedra app. The response then includes `source` when the
+   * input photo is already in that property, or when `name` is also sent.
+   */
+  propertyId?: string;
+  /**
+   * Name for the original photo (e.g. its file name), up to 200 characters.
+   * Only used with `propertyId`: if the photo isn't in that property yet, it is
+   * saved there under this name in the same call (no `addImagesToProperty`
+   * needed) and returned as `source.name`. A photo already in the property
+   * keeps its name. Never drawn on the image.
+   */
+  name?: string;
+}
+
+export interface EnhanceParams extends ImageEditOptions {
   /** URL or `data:` URL of the source image. */
   imageUrl: string;
   /**
-   * When true, preserves the original framing/aspect ratio/resolution exactly
-   * (uses nano-banana-2 instead of gpt-image). Intended for verification
-   * verticals where the output must legally represent the captured photo.
+   * Keep the captured photo's content exactly: only light, sharpness (and
+   * perspective) change; colors, materials and object sizes are preserved.
+   * Intended for verticals where the output must legally represent the
+   * captured photo.
    */
+  highFidelity?: boolean;
+  /** @deprecated Use `highFidelity`. Sent as `highFidelity` when that is unset. */
   preserveOriginalFraming?: boolean;
 }
 
-export interface EnhanceAndCorrectPerspectiveParams {
+export interface EnhanceAndCorrectPerspectiveParams extends ImageEditOptions {
   imageUrl: string;
+  highFidelity?: boolean;
+  /** @deprecated Use `highFidelity`. Sent as `highFidelity` when that is unset. */
   preserveOriginalFraming?: boolean;
 }
 
-export interface EmptyParams {
+export interface EmptyParams extends ImageEditOptions {
   imageUrl: string;
 }
 
-export interface FurnishParams {
+export interface FurnishParams extends ImageEditOptions {
   imageUrl: string;
   /** e.g. "Living room", "Bedroom", "Kitchen". Auto-detected if omitted. */
   roomType?: string;
@@ -105,7 +146,7 @@ export interface FurnishParams {
   creativity?: Creativity;
 }
 
-export interface RenovationParams {
+export interface RenovationParams extends ImageEditOptions {
   imageUrl: string;
   style?: string;
   /**
@@ -121,25 +162,25 @@ export interface RenovationParams {
   roomType?: string;
 }
 
-export interface EditViaPromptParams {
+export interface EditViaPromptParams extends ImageEditOptions {
   imageUrl: string;
   /** Natural-language description of the edit to apply. */
   prompt: string;
 }
 
-export interface SkyParams {
+export interface SkyParams extends ImageEditOptions {
   imageUrl: string;
   /** Optional named sky style to apply. */
   skyStyle?: string;
 }
 
-export interface RemoveParams {
+export interface RemoveParams extends ImageEditOptions {
   imageUrl: string;
   /** URL of the mask marking the region to remove. */
   maskUrl: string;
 }
 
-export interface BlurParams {
+export interface BlurParams extends ImageEditOptions {
   imageUrl: string;
   /** Object labels/regions to blur (e.g. faces, license plates). */
   objectsToBlur: unknown;
@@ -394,6 +435,13 @@ export interface AddImagesToPropertyParams {
    * Defaults to `"photo"`.
    */
   type?: PropertyImageType;
+  /**
+   * Optional names, one per image in the same order as `imageUrls` (e.g. the
+   * original file names), up to 200 characters each. Returned as `name` by
+   * `listPropertyImages` and as `source.name` when the photo is edited.
+   * Defaults to "Image 1", "Image 2"...
+   */
+  names?: string[];
 }
 
 /** Response from {@link Pedra.addImagesToProperty}. */
