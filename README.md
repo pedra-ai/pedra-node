@@ -213,8 +213,10 @@ const video = await pedra.createVideo({
 console.log(video.videoUrl);
 ```
 
-Per-image `effect` is one of `zoom-in` (default), `zoom-out`, `transition`
-(requires `secondImageUrl`), or `static`. Each non-static image costs 5 credits.
+Per-image `effect` is one of `zoom-in` (default), `zoom-out`, `transition` or
+`sky-transition` (both require `secondImageUrl`), all AI and 5 credits each, or
+the free `lite-zoom-in` / `lite-zoom-out` (a subtler 3D push, no AI video) and
+`static`.
 
 ## Virtual tours
 

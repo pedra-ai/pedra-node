@@ -5,8 +5,20 @@ export type Creativity = "Low" | "Medium" | "High";
 /** Thumbs up/down vote. An empty string clears a previous vote. */
 export type Vote = "up" | "down" | "positive" | "negative" | "";
 
-/** Animation applied to an image in a video. */
-export type VideoEffect = "zoom-in" | "zoom-out" | "transition" | "static";
+/**
+ * Animation applied to an image in a video. AI effects cost 5 credits:
+ * "zoom-in", "zoom-out", "transition" and "sky-transition" (the last two need
+ * `secondImageUrl`). Free: "lite-zoom-in" / "lite-zoom-out" (a subtler 3D
+ * push, no AI video) and "static".
+ */
+export type VideoEffect =
+  | "zoom-in"
+  | "zoom-out"
+  | "transition"
+  | "sky-transition"
+  | "lite-zoom-in"
+  | "lite-zoom-out"
+  | "static";
 
 /** Options for constructing a {@link Pedra} client. */
 export interface ClientOptions {
