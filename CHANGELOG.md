@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.1
+
+- `VideoEffect` adds `"sky-transition"` (needs `secondImageUrl`, 5 credits) and
+  the free `"lite-zoom-in"` / `"lite-zoom-out"`: a subtler 3D push rendered
+  without an AI video model, 0 credits like `"static"`.
+
 ## 0.5.0
 
 - **Save edits into a property.** Every image method (`enhance`, `furnish`,
