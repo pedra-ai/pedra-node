@@ -108,6 +108,8 @@ Every image method also accepts `preserveAspectRatio`, `propertyId` and `name`
 | --- | --- | --- |
 | `enhance({ imageUrl, highFidelity? })` | `/enhance` | `ImageResponse` |
 | `enhanceAndCorrectPerspective({ imageUrl, highFidelity? })` | `/enhance_and_correct_perspective` | `ImageResponse` |
+| `correctPerspective({ imageUrl })` | `/correct_perspective` | `ImageResponse` |
+| `makeHD({ imageUrl })` | `/make_hd` | `ImageResponse` |
 | `empty({ imageUrl })` | `/empty_room` | `ImageResponse` |
 | `furnish({ imageUrl, roomType?, style? })` | `/furnish` | `ImageResponse` |
 | `renovation({ imageUrl, style?, furnish?, roomType? })` | `/renovation` | `ImageResponse` |

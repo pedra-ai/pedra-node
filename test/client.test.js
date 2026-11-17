@@ -635,3 +635,16 @@ test("waitForAccess throws after timeoutMs while still pending", async () => {
     return true;
   });
 });
+
+test("correctPerspective and makeHD post to their endpoints", async () => {
+  const fetch = fakeFetch({ text: JSON.stringify({ output: [{ url: "https://x/hd" }] }) });
+  const pedra = new Pedra("k", { fetch });
+  await pedra.correctPerspective({ imageUrl: "https://img", preserveAspectRatio: true });
+  const res = await pedra.makeHD({ imageUrl: "https://img", propertyId: "p1" });
+
+  assert.equal(fetch.calls[0].url, "https://app.pedra.ai/api/correct_perspective");
+  assert.deepEqual(fetch.calls[0].body, { apiKey: "k", imageUrl: "https://img", preserveAspectRatio: true });
+  assert.equal(fetch.calls[1].url, "https://app.pedra.ai/api/make_hd");
+  assert.deepEqual(fetch.calls[1].body, { apiKey: "k", imageUrl: "https://img", propertyId: "p1" });
+  assert.equal(res.url, "https://x/hd");
+});

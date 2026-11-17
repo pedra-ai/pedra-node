@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.0
+
+- `correctPerspective` (`/correct_perspective`): straightens vertical lines
+  only, without the enhance pass. 1 credit.
+- `makeHD` (`/make_hd`): AI upscale to a sharper, higher-resolution photo.
+  1 credit. Takes `propertyId` and `name` but not `preserveAspectRatio`, since
+  the output is meant to be larger than the input.
+
 ## 0.5.1
 
 - `VideoEffect` adds `"sky-transition"` (needs `secondImageUrl`, 5 credits) and

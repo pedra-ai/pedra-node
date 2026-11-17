@@ -141,6 +141,20 @@ export interface EnhanceAndCorrectPerspectiveParams extends ImageEditOptions {
   preserveOriginalFraming?: boolean;
 }
 
+export interface CorrectPerspectiveParams extends ImageEditOptions {
+  /** URL or `data:` URL of the source image. */
+  imageUrl: string;
+}
+
+/**
+ * The output is larger than the input, so `preserveAspectRatio` (which resizes
+ * back to the input's size) does not apply.
+ */
+export interface MakeHDParams extends Omit<ImageEditOptions, "preserveAspectRatio"> {
+  /** URL or `data:` URL of the source image. */
+  imageUrl: string;
+}
+
 export interface EmptyParams extends ImageEditOptions {
   imageUrl: string;
 }

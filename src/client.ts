@@ -14,6 +14,8 @@ import type {
   FeedbackResponse,
   EnhanceParams,
   EnhanceAndCorrectPerspectiveParams,
+  CorrectPerspectiveParams,
+  MakeHDParams,
   EmptyParams,
   FurnishParams,
   RenovationParams,
@@ -127,6 +129,19 @@ export class Pedra {
     return this.image(
       await this.post("/enhance_and_correct_perspective", withHighFidelity(params)),
     );
+  }
+
+  /**
+   * Straighten vertical lines only, without the enhance pass. 1 credit.
+   * (`/correct_perspective`)
+   */
+  async correctPerspective(params: CorrectPerspectiveParams): Promise<ImageResponse> {
+    return this.image(await this.post("/correct_perspective", params));
+  }
+
+  /** AI upscale to a sharper, higher-resolution photo. 1 credit. (`/make_hd`) */
+  async makeHD(params: MakeHDParams): Promise<ImageResponse> {
+    return this.image(await this.post("/make_hd", params));
   }
 
   /** Empty a room — remove all furniture and objects. (`/empty_room`) */
