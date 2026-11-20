@@ -798,3 +798,56 @@ export interface AddLocalPanoramasOptions {
    */
   maxRequestBytes?: number;
 }
+
+// ---- Same room, several angles (/furnish_same_room) ------------------------
+
+export interface FurnishSameRoomParams {
+  /**
+   * 2 to 10 photos of ONE room (URLs or `data:` URLs), widest shot first.
+   * Stage separate rooms with separate calls.
+   */
+  imageUrls: string[];
+  /** e.g. "Living room", "Bedroom". Auto-detected if omitted. */
+  roomType?: string;
+  /** Style for the first photo, e.g. "Minimalist". Required unless `referenceImageUrl` is set. */
+  style?: string;
+  /**
+   * Public URL of a photo of this room that is already staged. Every photo is
+   * then furnished to match it (2 credits each) and `style` is ignored.
+   */
+  referenceImageUrl?: string;
+  /** Return each result at the exact size of its input photo. */
+  preserveAspectRatio?: boolean;
+  /** Save the photos and results into this property's gallery. */
+  propertyId?: string;
+}
+
+/** `"partial"`: some photos failed and weren't charged. */
+export type SameRoomJobStatus = "processing" | "ready" | "partial" | "failed";
+
+export interface SameRoomOutput {
+  /** Position in `imageUrls`. */
+  index: number;
+  status: "processing" | "ready" | "failed";
+  /** Set once `status` is `"ready"`. */
+  url: string | null;
+}
+
+export interface SameRoomJob {
+  jobId: string;
+  status: SameRoomJobStatus;
+  propertyId?: string;
+  /** One entry per photo, in the order sent. */
+  output: SameRoomOutput[];
+  message?: string;
+  /** Credits the job will spend if every photo succeeds (start response only). */
+  creditsEstimated?: number;
+  raw: unknown;
+}
+
+export interface WaitForFurnishSameRoomOptions {
+  /** Delay between polls in ms. Defaults to 5000. */
+  intervalMs?: number;
+  /** Give up (throw a `PedraError`) after this many ms. Defaults to 900000 (15 min). */
+  timeoutMs?: number;
+}

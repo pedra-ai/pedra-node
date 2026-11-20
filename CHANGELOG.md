@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.7.0
+
+- `furnishSameRoom` (`/furnish_same_room`): stage 2 to 10 photos of the same
+  room so every angle gets the same furniture in the same places. Stages the
+  first photo in `style` (or copies `referenceImageUrl`), then furnishes the
+  other angles from it. 1 credit for the first photo, 2 per extra angle. Runs
+  in the background: returns a `jobId`.
+- `getFurnishSameRoom(jobId)` and `waitForFurnishSameRoom(jobId)` read the job:
+  `processing`, `ready`, `partial` or `failed`, with one output per photo.
+
 ## 0.6.0
 
 - `correctPerspective` (`/correct_perspective`): straightens vertical lines

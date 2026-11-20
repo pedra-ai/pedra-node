@@ -50,6 +50,9 @@ import type {
   UploadLinkResponse,
   WaitForVirtualTourOptions,
   AddLocalPanoramasOptions,
+  FurnishSameRoomParams,
+  SameRoomJob,
+  WaitForFurnishSameRoomOptions,
 } from "./types";
 
 const DEFAULT_TIMEOUT = 600_000; // 10 min — createVideo blocks server-side until rendered.
@@ -152,6 +155,49 @@ export class Pedra {
   /** Virtually stage / furnish a room. */
   async furnish(params: FurnishParams): Promise<ImageResponse> {
     return this.image(await this.post("/furnish", params));
+  }
+
+  /**
+   * Stage 2 to 10 photos of the SAME room so every angle gets the same
+   * furniture in the same places. Stages the first photo in `style`, then
+   * furnishes every other angle from it (or all of them from
+   * `referenceImageUrl`). 1 credit for the first photo, 2 per extra angle.
+   * Returns right away with `status: "processing"`: poll
+   * {@link Pedra.getFurnishSameRoom} or use {@link Pedra.waitForFurnishSameRoom}.
+   * (`/furnish_same_room`)
+   */
+  async furnishSameRoom(params: FurnishSameRoomParams): Promise<SameRoomJob> {
+    return this.sameRoomJob(await this.post("/furnish_same_room", params));
+  }
+
+  /**
+   * Status of a {@link Pedra.furnishSameRoom} job, with one output per photo in
+   * the order sent. Never spends credits. (`/furnish_same_room_status`)
+   */
+  async getFurnishSameRoom(jobId: string): Promise<SameRoomJob> {
+    return this.sameRoomJob(await this.post("/furnish_same_room_status", { jobId }));
+  }
+
+  /**
+   * Poll {@link Pedra.getFurnishSameRoom} until the job is no longer
+   * `"processing"` and return it (`"ready"`, `"partial"` or `"failed"`; check
+   * each output). Throws a `PedraError` if it's still processing after `timeoutMs`.
+   */
+  async waitForFurnishSameRoom(
+    jobId: string,
+    options: WaitForFurnishSameRoomOptions = {},
+  ): Promise<SameRoomJob> {
+    const intervalMs = options.intervalMs ?? 5_000;
+    const timeoutMs = options.timeoutMs ?? 900_000;
+    const deadline = Date.now() + timeoutMs;
+    for (;;) {
+      const job = await this.getFurnishSameRoom(jobId);
+      if (job.status !== "processing") return job;
+      if (Date.now() + intervalMs > deadline) {
+        throw new PedraError(`Same-room job ${jobId} was still processing after ${timeoutMs}ms`);
+      }
+      await sleep(intervalMs);
+    }
   }
 
   /** Renovate a space (optionally furnished). */
@@ -617,6 +663,15 @@ export class Pedra {
       { apiKey: this.apiKey, ...body },
       opts,
     );
+  }
+
+  private sameRoomJob(data: unknown): SameRoomJob {
+    const output = pick(data, "output");
+    return {
+      ...(data as object),
+      output: Array.isArray(output) ? (output as SameRoomJob["output"]) : [],
+      raw: data,
+    } as SameRoomJob;
   }
 
   private tour(data: unknown): VirtualTour {

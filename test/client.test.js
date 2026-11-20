@@ -648,3 +648,31 @@ test("correctPerspective and makeHD post to their endpoints", async () => {
   assert.deepEqual(fetch.calls[1].body, { apiKey: "k", imageUrl: "https://img", propertyId: "p1" });
   assert.equal(res.url, "https://x/hd");
 });
+
+test("furnishSameRoom posts the photos and returns the job", async () => {
+  const fetch = fakeFetch({ text: JSON.stringify({ jobId: "j1", status: "processing", creditsEstimated: 3, output: [{ index: 0, status: "processing", url: null }, { index: 1, status: "processing", url: null }] }) });
+  const pedra = new Pedra("k", { fetch });
+  const job = await pedra.furnishSameRoom({ imageUrls: ["https://a", "https://b"], style: "Minimalist" });
+  assert.equal(fetch.calls[0].url, "https://app.pedra.ai/api/furnish_same_room");
+  assert.deepEqual(fetch.calls[0].body, { apiKey: "k", imageUrls: ["https://a", "https://b"], style: "Minimalist" });
+  assert.equal(job.jobId, "j1");
+  assert.equal(job.status, "processing");
+  assert.equal(job.output.length, 2);
+});
+
+test("waitForFurnishSameRoom polls until the job is done", async () => {
+  let n = 0;
+  const fetch = async (url, init) => {
+    n++;
+    const body = JSON.parse(init.body);
+    assert.equal(url, "https://app.pedra.ai/api/furnish_same_room_status");
+    assert.equal(body.jobId, "j1");
+    const status = n < 2 ? "processing" : "ready";
+    return { ok: true, status: 200, text: async () => JSON.stringify({ jobId: "j1", status, output: [{ index: 0, status, url: status === "ready" ? "https://r/0" : null }] }) };
+  };
+  const pedra = new Pedra("k", { fetch });
+  const job = await pedra.waitForFurnishSameRoom("j1", { intervalMs: 1 });
+  assert.equal(job.status, "ready");
+  assert.equal(job.output[0].url, "https://r/0");
+  assert.equal(n, 2);
+});

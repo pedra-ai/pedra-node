@@ -112,6 +112,9 @@ Every image method also accepts `preserveAspectRatio`, `propertyId` and `name`
 | `makeHD({ imageUrl })` | `/make_hd` | `ImageResponse` |
 | `empty({ imageUrl })` | `/empty_room` | `ImageResponse` |
 | `furnish({ imageUrl, roomType?, style? })` | `/furnish` | `ImageResponse` |
+| `furnishSameRoom({ imageUrls, style? \| referenceImageUrl?, roomType?, propertyId? })` | `/furnish_same_room` | `SameRoomJob` |
+| `getFurnishSameRoom(jobId)` | `/furnish_same_room_status` | `SameRoomJob` |
+| `waitForFurnishSameRoom(jobId, { intervalMs?, timeoutMs? })` | polls `/furnish_same_room_status` | `SameRoomJob` |
 | `renovation({ imageUrl, style?, furnish?, roomType? })` | `/renovation` | `ImageResponse` |
 | `editViaPrompt({ imageUrl, prompt })` | `/edit_via_prompt` | `ImageResponse` |
 | `sky({ imageUrl, skyStyle? })` | `/sky_blue` | `ImageResponse` |
