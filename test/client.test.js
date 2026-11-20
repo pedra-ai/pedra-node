@@ -100,6 +100,21 @@ test("throws on a 4xx error body", async () => {
   });
 });
 
+test("timeout still applies after the heartbeat has sent the headers", async () => {
+  const fetch = async (url, init) => ({
+    ok: true,
+    status: 200,
+    text: () =>
+      new Promise((_, reject) => {
+        init.signal.addEventListener("abort", () =>
+          reject(Object.assign(new Error("aborted"), { name: "AbortError" })),
+        );
+      }),
+  });
+  const pedra = new Pedra("k", { fetch, timeout: 50 });
+  await assert.rejects(pedra.enhance({ imageUrl: "https://img" }), /timed out after 50ms/);
+});
+
 test("throws when a long request fails with HTTP 200 + error body", async () => {
   const fetch = fakeFetch({ ok: true, status: 200, text: JSON.stringify({ error: "Video processing failed" }) });
   const pedra = new Pedra("k", { fetch });

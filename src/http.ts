@@ -34,7 +34,9 @@ export async function postJson(
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), config.timeout);
 
+  // The heartbeat sends the 200 header early, so the timer must cover the body read too.
   let res: Response;
+  let text: string;
   try {
     res = await config.fetchImpl(`${config.baseUrl}${path}`, {
       method: "POST",
@@ -46,6 +48,8 @@ export async function postJson(
       body: JSON.stringify(body),
       signal: controller.signal,
     });
+    // The heartbeat prefixes long responses with whitespace; JSON.parse tolerates it.
+    text = await res.text();
   } catch (err) {
     const e = err as { name?: string; message?: string };
     if (e?.name === "AbortError") {
@@ -56,8 +60,6 @@ export async function postJson(
     clearTimeout(timer);
   }
 
-  // The heartbeat prefixes long responses with whitespace; JSON.parse tolerates it.
-  const text = await res.text();
   let data: unknown;
   if (text && text.trim()) {
     try {
